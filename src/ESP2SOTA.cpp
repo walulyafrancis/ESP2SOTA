@@ -30,9 +30,18 @@ void ESP2SOTAClass::begin(WebServer *server)
     HTTPUpload& upload = _server->upload();
     if (upload.status == UPLOAD_FILE_START) {
       Serial.printf("Update: %s\n", upload.filename.c_str());
-      if (!Update.begin(UPDATE_SIZE_UNKNOWN)) { //start with max available size
+////////////////////////////////////////////////////////////
+#if defined(ESP8266)
+        uint32_t MAX_SKETCH_SPACE = (ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000;
+        if (!Update.begin(MAX_SKETCH_SPACE)) { //start with max available size
         Update.printError(Serial);
-      }
+        }
+#elif defined(ESP32)
+        if (!Update.begin(UPDATE_SIZE_UNKNOWN)) { //start with max available size
+        Update.printError(Serial);
+        }
+#endif    
+////////////////////////////////////////////////////////////////////
     } else if (upload.status == UPLOAD_FILE_WRITE) {
       /* flashing firmware to ESP*/
       if (Update.write(upload.buf, upload.currentSize) != upload.currentSize) {
